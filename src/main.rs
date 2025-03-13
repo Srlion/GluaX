@@ -4,7 +4,7 @@ use std::{cell::RefCell, sync::Mutex};
 use lexer::*;
 use parser::Parser;
 
-// mod diagnostics;
+mod diagnostics;
 mod lexer;
 mod parser;
 
@@ -81,9 +81,9 @@ fn main() {
 
     let mut parser = Parser::new(code);
     let statements = parser.parse();
-    println!("{:#?}", statements);
-    // let mut compiler = diagnostics::Diagnostics::new(statements);
-    // compiler.diagnose();
+    // println!("{:#?}", statements);
+    let mut compiler = diagnostics::Diagnostics::new(statements);
+    compiler.diagnose();
 
     // println!("Took {:?} to diagnose", start.elapsed());
 

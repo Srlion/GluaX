@@ -1,3 +1,3 @@
-func main(str: string) {
-    return str;
-}
+let yes = 1;
+let lol: string = yes;
+let lol: string = lol;

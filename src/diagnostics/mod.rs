@@ -2,8 +2,8 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     add_diagnostic,
-    lexer::{self, Token, TokenKind},
-    parser::{self, Block, Expression, Type, Variable},
+    lexer::{self, Ident, Token},
+    parser::{self, Block, Expression, Func, Variable},
     Diagnostic, DiagnosticSeverity, Span,
 };
 
@@ -14,18 +14,22 @@ pub struct Diagnostics {
 
 pub struct Scope {
     pub variables: HashMap<String, Variable>,
-    pub functions: Vec<Token>,
+    pub functions: Vec<Func>,
     pub parent: Option<ScopeRef>,
-    pub types: Vec<Type>,
+    pub types: Vec<Ident>,
 }
 
 type ScopeRef = Rc<RefCell<Scope>>;
 
-fn new_type(name: &str) -> Type {
-    Type {
+fn new_type(name: &str) -> Ident {
+    Ident {
         name: name.to_string(),
         span: Span::default(),
     }
+}
+
+fn is_primitive_type(name: &str) -> bool {
+    matches!(name, "nil" | "bool" | "number" | "string")
 }
 
 impl Diagnostics {
@@ -62,23 +66,29 @@ impl Diagnostics {
     fn diagnose_variable_declaration(&mut self, scope: ScopeRef, var: &parser::Variable) {
         let mut var_type = var.type_.clone();
 
-        if let Some(initializer) = &var.initializer {
-            let initializer_type = self.get_expression_type(scope.clone(), initializer);
+        let initializer = &var.initializer;
+        let initializer_type = self.get_expression_type(scope.clone(), initializer);
 
-            if let Some(ref declared_type) = var_type {
-                if !self.type_matches(scope.clone(), declared_type, &initializer_type) {
-                    add_diagnostic(Diagnostic {
-                        span: initializer.span.clone(),
-                        severity: DiagnosticSeverity::Error,
-                        message: format!(
-                            "Type mismatch for '{}': expected '{}', got '{}'",
-                            var.name, declared_type.name, initializer_type.name
-                        ),
-                    });
-                }
-            } else {
-                var_type = Some(initializer_type);
+        if let Some(ref declared_type) = var_type {
+            if !self.type_exists(scope.clone(), &declared_type.name) {
+                add_diagnostic(Diagnostic {
+                    span: declared_type.span.clone(),
+                    severity: DiagnosticSeverity::Error,
+                    message: format!("Type '{}' not found", declared_type.name),
+                });
             }
+            if !self.type_matches(scope.clone(), declared_type, &initializer_type) {
+                add_diagnostic(Diagnostic {
+                    span: initializer.span().clone(),
+                    severity: DiagnosticSeverity::Error,
+                    message: format!(
+                        "Type mismatch for variable '{}': expected '{}', got '{}'",
+                        var.name, declared_type.name, initializer_type.name
+                    ),
+                });
+            }
+        } else {
+            var_type = Some(initializer_type);
         }
 
         let var_to_add = if let Some(var_type) = var_type {
@@ -100,21 +110,18 @@ impl Diagnostics {
         scope
             .borrow_mut()
             .variables
-            .insert(var.name.clone(), var_to_add);
+            .insert(var.name.name.clone(), var_to_add);
     }
 
-    fn get_expression_type(&self, scope: ScopeRef, expr: &parser::Expression) -> Type {
+    fn get_expression_type(&self, scope: ScopeRef, expr: &parser::Expression) -> Ident {
         match expr {
             Expression::Nil(_) => new_type("nil"),
-            Expression::Bool(_) => new_type("bool"),
+            Expression::Bool(_, _) => new_type("bool"),
             Expression::Number(_) => new_type("number"),
-            Expression::String(_) => new_type("string"),
-            Expression::Identifier(name_token) => {
-                let var_name = match &name_token.kind {
-                    TokenKind::Identifier(name) => name,
-                    _ => panic!("Expected identifier"),
-                };
-                self.lookup_variable_type(scope, var_name)
+            Expression::StringLit(_) => new_type("string"),
+            Expression::Var(name_token) => {
+                let var_name = name_token.name.clone();
+                self.lookup_variable_type(scope, &var_name)
                     .unwrap_or_else(|| {
                         add_diagnostic(Diagnostic {
                             span: name_token.span.clone(),
@@ -128,8 +135,8 @@ impl Diagnostics {
         }
     }
 
-    fn lookup_variable_type(&self, scope: ScopeRef, name: &str) -> Option<Type> {
-        fn lookup(scope: ScopeRef, name: &str) -> Option<Type> {
+    fn lookup_variable_type(&self, scope: ScopeRef, name: &str) -> Option<Ident> {
+        fn lookup(scope: ScopeRef, name: &str) -> Option<Ident> {
             let scope_ref = scope.borrow();
             if let Some(var) = scope_ref.variables.get(name) {
                 var.type_.clone()
@@ -142,11 +149,30 @@ impl Diagnostics {
         lookup(scope, name)
     }
 
-    fn type_matches(&self, scope: ScopeRef, left: &Type, right: &Type) -> bool {
-        if left.name == right.name {
+    fn type_exists(&self, scope: ScopeRef, name: &str) -> bool {
+        if is_primitive_type(name) {
             return true;
         }
-        if left.name == "any" || right.name == "any" {
+        let scope_ref = scope.borrow();
+        for ident in &scope_ref.types {
+            if ident.name == name {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn type_matches(&self, scope: ScopeRef, left: &Ident, right: &Ident) -> bool {
+        if is_primitive_type(&left.name) || is_primitive_type(&right.name) {
+            return left.name == right.name;
+        }
+        if left.name == "any" {
+            return true;
+        }
+
+        // we need to find out how to make sure types with same name from different sources match or not
+        todo!("");
+        if left.name == right.name {
             return true;
         }
         false

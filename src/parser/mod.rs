@@ -92,7 +92,23 @@ pub enum Expression {
     Vararg(Span),
     Binary(Box<Expression>, Span, Box<Expression>),
     FuncCall(FuncCall),
-    Not(Box<Expression>),
+    Not(Box<Expression>, Span),
+}
+
+impl Expression {
+    pub fn span(&self) -> Span {
+        match self {
+            Expression::Nil(span) => span.clone(),
+            Expression::Bool(_, span) => span.clone(),
+            Expression::Number(number) => number.span.clone(),
+            Expression::StringLit(string) => string.span.clone(),
+            Expression::Var(ident) => ident.span.clone(),
+            Expression::Vararg(span) => span.clone(),
+            Expression::Binary(exp, span, _) => span.clone(),
+            Expression::FuncCall(func_call) => todo!(),
+            Expression::Not(exp, span) => span.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -540,9 +556,11 @@ impl<'a> Parser<'a> {
             }
             Token::Ident(_) => self.parse_identifier_or_function_call(),
             Token::Punct(Punct::Exclamation(_)) => {
+                let start_span = self.current.span();
                 self.advance(); // consume '!'
                 let exp = self.parse_expression();
-                Expression::Not(Box::new(exp))
+                let end_span = exp.span().clone();
+                Expression::Not(Box::new(exp), Span::from(start_span, end_span))
             }
             _ => crate::hard_error("Expected expression", self.current.span().clone()),
         }
