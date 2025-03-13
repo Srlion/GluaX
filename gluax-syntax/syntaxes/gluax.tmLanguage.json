@@ -1,0 +1,127 @@
+{
+    "name": "GluaX",
+    "scopeName": "source.gluax",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#types"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#booleans"
+        },
+        {
+            "include": "#braces"
+        },
+        {
+            "include": "#identifiers"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.gluax",
+                    "match": "//.*$"
+                },
+                {
+                    "name": "comment.block.gluax",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.gluax",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.gluax",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.gluax",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.gluax",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.gluax",
+                    "match": "\\belse\\s+if\\b"
+                },
+                {
+                    "name": "keyword.control.gluax",
+                    "match": "\\b(if|while|loop|return|func|let|else)\\b"
+                }
+            ]
+        },
+        "types": {
+            "patterns": [
+                {
+                    "name": "storage.type.gluax",
+                    "match": "\\b(string|bool|number|nil|any)\\b"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.gluax",
+                    "match": "\\b\\d+(\\.\\d+)?\\b"
+                }
+            ]
+        },
+        "booleans": {
+            "patterns": [
+                {
+                    "name": "constant.language.boolean.gluax",
+                    "match": "\\b(true|false)\\b"
+                }
+            ]
+        },
+        "braces": {
+            "patterns": [
+                {
+                    "name": "punctuation.section.block.begin.gluax",
+                    "match": "\\{"
+                },
+                {
+                    "name": "punctuation.section.block.end.gluax",
+                    "match": "\\}"
+                }
+            ]
+        },
+        "identifiers": {
+            "patterns": [
+                {
+                    "name": "identifier.gluax",
+                    "match": "(\\p{L}|_)(\\p{L}|\\p{N}|_)*"
+                }
+            ]
+        }
+    }
+}

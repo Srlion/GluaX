@@ -1,0 +1,17 @@
+[package]
+name = "GluaX"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+paste = "1.0.15"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+unicode-ident = "1.0.13"
+unicode-properties = "0.1.3"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = true

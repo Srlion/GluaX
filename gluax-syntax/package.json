@@ -1,0 +1,29 @@
+{
+    "name": "gluax-syntax-highlighter",
+    "displayName": "GluaX Syntax Highlighter",
+    "description": "A simple syntax highlighter for the GluaX language",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.60.0"
+    },
+    "contributes": {
+        "languages": [
+            {
+                "id": "gluax",
+                "extensions": [
+                    ".gluax"
+                ],
+                "aliases": [
+                    "GluaX"
+                ]
+            }
+        ],
+        "grammars": [
+            {
+                "language": "gluax",
+                "scopeName": "source.gluax",
+                "path": "./syntaxes/gluax.tmLanguage.json"
+            }
+        ]
+    }
+}
